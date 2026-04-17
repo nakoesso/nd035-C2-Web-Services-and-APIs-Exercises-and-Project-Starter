@@ -1,5 +1,4 @@
 package com.udacity.vehicles.api;
-
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 import com.udacity.vehicles.domain.car.Car;
 import com.udacity.vehicles.service.CarService;
@@ -8,10 +7,8 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.stream.Collectors;
 import jakarta.validation.Valid;
-
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.CollectionModel;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,49 +18,59 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 /**
  * Implements a REST-based controller for the Vehicles API.
  */
 @RestController
 @RequestMapping("/cars")
+@Tag(name = "Cars", description = "API for managing vehicles")
 class CarController {
-
     private final CarService carService;
     private final CarResourceAssembler assembler;
-
     CarController(CarService carService, CarResourceAssembler assembler) {
         this.carService = carService;
         this.assembler = assembler;
     }
-
     /**
-     * Creates a list to store any vehicles.
+     * Retrieves a list of all available vehicles.
      * @return list of vehicles
      */
     @GetMapping
+    @Operation(summary = "Get all vehicles", description = "Retrieves a paginated list of all available vehicles in the system")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved list of vehicles",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Car.class)))
     CollectionModel<EntityModel<Car>> list() {
         List<EntityModel<Car>> resources = carService.list().stream().map(assembler::toModel)
                 .collect(Collectors.toList());
         return CollectionModel.of(resources,
                 linkTo(methodOn(CarController.class).list()).withSelfRel());
     }
-
     /**
      * Gets information of a specific car by ID.
      * @param id the id number of the given vehicle
      * @return all information for the requested vehicle
      */
     @GetMapping("/{id}")
-    EntityModel<Car> get(@PathVariable Long id) {
-        /**
-         * TODO: Use the `findById` method from the Car Service to get car information.
-         * TODO: Use the `assembler` on that car and return the resulting output.
-         *   Update the first line as part of the above implementing.
-         */
-        return assembler.toModel(new Car());
+    @Operation(summary = "Get vehicle by ID", description = "Retrieves detailed information for a specific vehicle including pricing and location")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Vehicle found",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Car.class))),
+            @ApiResponse(responseCode = "404", description = "Vehicle not found")
+    })
+    EntityModel<Car> get(
+            @Parameter(description = "Vehicle ID", required = true, example = "1")
+            @PathVariable Long id) {
+        Car car = carService.findById(id);
+        return assembler.toModel(car);
     }
-
     /**
      * Posts information to create a new vehicle in the system.
      * @param car A new vehicle to add to the system.
@@ -71,20 +78,19 @@ class CarController {
      * @throws URISyntaxException if the request contains invalid fields or syntax
      */
     @PostMapping
-    ResponseEntity<?> post(@Valid @RequestBody Car car) throws URISyntaxException {
-        /**
-         * TODO: Use the `save` method from the Car Service to save the input car.
-         * TODO: Use the `assembler` on that saved car and return as part of the response.
-         *   Update the first line as part of the above implementing.
-         */
-        EntityModel<Car> resource = assembler.toModel(new Car());
-
-        //Note: There will be error on this line till above TODOs are implemented
-        return ResponseEntity.created(new URI(resource.getId().expand().getHref())).body(resource);     
-
-        
+    @Operation(summary = "Create a new vehicle", description = "Creates a new vehicle record with the provided information")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Vehicle created successfully",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Car.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input provided")
+    })
+    ResponseEntity<?> post(
+            @Parameter(description = "Vehicle details", required = true)
+            @Valid @RequestBody Car car) throws URISyntaxException {
+        Car savedCar = carService.save(car);
+        EntityModel<Car> resource = assembler.toModel(savedCar);
+        return ResponseEntity.created(new URI(resource.getRequiredLink("self").getHref())).body(resource);
     }
-
     /**
      * Updates the information of a vehicle in the system.
      * @param id The ID number for which to update vehicle information.
@@ -92,27 +98,38 @@ class CarController {
      * @return response that the vehicle was updated in the system
      */
     @PutMapping("/{id}")
-    ResponseEntity<?> put(@PathVariable Long id, @Valid @RequestBody Car car) {
-        /**
-         * TODO: Set the id of the input car object to the `id` input.
-         * TODO: Save the car using the `save` method from the Car service
-         * TODO: Use the `assembler` on that updated car and return as part of the response.
-         *   Update the first line as part of the above implementing.
-         */
-        EntityModel<Car> resource = assembler.toModel(new Car());
+    @Operation(summary = "Update a vehicle", description = "Updates an existing vehicle record with new information")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Vehicle updated successfully",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Car.class))),
+            @ApiResponse(responseCode = "404", description = "Vehicle not found"),
+            @ApiResponse(responseCode = "400", description = "Invalid input provided")
+    })
+    ResponseEntity<?> put(
+            @Parameter(description = "Vehicle ID", required = true, example = "1")
+            @PathVariable Long id,
+            @Parameter(description = "Updated vehicle details", required = true)
+            @Valid @RequestBody Car car) {
+        car.setId(id);
+        Car updatedCar = carService.save(car);
+        EntityModel<Car> resource = assembler.toModel(updatedCar);
         return ResponseEntity.ok(resource);
     }
-
     /**
      * Removes a vehicle from the system.
      * @param id The ID number of the vehicle to remove.
      * @return response that the related vehicle is no longer in the system
      */
     @DeleteMapping("/{id}")
-    ResponseEntity<?> delete(@PathVariable Long id) {
-        /**
-         * TODO: Use the Car Service to delete the requested vehicle.
-         */
+    @Operation(summary = "Delete a vehicle", description = "Removes a vehicle record from the system")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Vehicle deleted successfully"),
+            @ApiResponse(responseCode = "404", description = "Vehicle not found")
+    })
+    ResponseEntity<?> delete(
+            @Parameter(description = "Vehicle ID", required = true, example = "1")
+            @PathVariable Long id) {
+        carService.delete(id);
         return ResponseEntity.noContent().build();
     }
 }

@@ -1,5 +1,4 @@
 package com.udacity.vehicles;
-
 import com.udacity.vehicles.domain.manufacturer.Manufacturer;
 import com.udacity.vehicles.domain.manufacturer.ManufacturerRepository;
 import org.modelmapper.ModelMapper;
@@ -10,7 +9,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.web.reactive.function.client.WebClient;
-
 /**
  * Launches a Spring Boot application for the Vehicles API,
  * initializes the car manufacturers in the database,
@@ -19,11 +17,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 @SpringBootApplication
 @EnableJpaAuditing
 public class VehiclesApiApplication {
-
     public static void main(String[] args) {
         SpringApplication.run(VehiclesApiApplication.class, args);
     }
-
     /**
      * Initializes the car manufacturers available to the Vehicle API.
      * @param repository where the manufacturer information persists.
@@ -39,12 +35,10 @@ public class VehiclesApiApplication {
             repository.save(new Manufacturer(104, "Dodge"));
         };
     }
-
     @Bean
     public ModelMapper modelMapper() {
         return new ModelMapper();
     }
-
     /**
      * Web Client for the maps (location) API
      * @param endpoint where to communicate for the maps API
@@ -54,7 +48,6 @@ public class VehiclesApiApplication {
     public WebClient webClientMaps(@Value("${maps.endpoint}") String endpoint) {
         return WebClient.create(endpoint);
     }
-
     /**
      * Web Client for the pricing API
      * @param endpoint where to communicate for the pricing API
@@ -64,5 +57,4 @@ public class VehiclesApiApplication {
     public WebClient webClientPricing(@Value("${pricing.endpoint}") String endpoint) {
         return WebClient.create(endpoint);
     }
-
 }

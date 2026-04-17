@@ -5,7 +5,7 @@ type Location {
 }
 
 type Query {
- findAllLocations: [Location]!
+  findAllLocations: [Location]!
 }
 
 type Mutation {
