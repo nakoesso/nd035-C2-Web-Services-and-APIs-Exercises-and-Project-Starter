@@ -8,6 +8,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.web.reactive.function.client.WebClient;
 /**
  * Launches a Spring Boot application for the Vehicles API,
@@ -16,6 +18,7 @@ import org.springframework.web.reactive.function.client.WebClient;
  */
 @SpringBootApplication
 @EnableJpaAuditing
+@EnableDiscoveryClient
 public class VehiclesApiApplication {
     public static void main(String[] args) {
         SpringApplication.run(VehiclesApiApplication.class, args);
@@ -54,7 +57,12 @@ public class VehiclesApiApplication {
      * @return created pricing endpoint
      */
     @Bean(name="pricing")
-    public WebClient webClientPricing(@Value("${pricing.endpoint}") String endpoint) {
-        return WebClient.create(endpoint);
+    @LoadBalanced
+    public WebClient.Builder webClientPricingBuilder() {
+        return WebClient.builder();
+    }
+    @Bean(name="pricingWebClient")
+    public WebClient webClientPricing(@Value("${pricing.endpoint}") String endpoint, WebClient.Builder webClientPricingBuilder) {
+        return webClientPricingBuilder.baseUrl(endpoint).build();
     }
 }

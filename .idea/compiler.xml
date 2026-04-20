@@ -8,6 +8,7 @@
         <outputRelativeToContentRoot value="true" />
         <module name="consuming (1)" />
         <module name="consuming" />
+        <module name="consuming (2)" />
         <module name="eureka" />
         <module name="document" />
         <module name="boogle-maps" />
@@ -21,6 +22,7 @@
       <module name="boogle-maps" options="-parameters" />
       <module name="consuming" options="-parameters" />
       <module name="consuming (1)" options="-parameters" />
+      <module name="consuming (2)" options="-parameters" />
       <module name="document" options="-parameters" />
       <module name="eureka" options="-parameters" />
       <module name="pricing-service" options="-parameters" />
